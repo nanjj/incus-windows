@@ -140,6 +140,22 @@ else
 fi
 
 
+# When a storage volume backs the image store, incusd sees it at a fixed
+# path on its own host. Push the ISO there so the build tree does not have
+# to live on the incusd host.
+IMAGES_VOL=$(incus config get storage.images_volume 2>/dev/null || :)
+if [ X != X"${IMAGES_VOL}" ]; then
+	printf '[+] Pushing Windows ISO to %s\n' "${IMAGES_VOL}"
+
+	incus storage volume file push "${isopath}" "${IMAGES_VOL%%/*}" \
+		"${IMAGES_VOL##*/}/isos/${fname}" --create-dirs
+
+	iso_host=/var/lib/incus/images/isos/${fname}
+else
+	iso_host="${isopath}"
+fi
+
+
 printf '[+] Building image\n'
 
 [ ! -d "${OUTDIR}" ] || die 'error: %s already exists\n' "${OUTDIR}"
